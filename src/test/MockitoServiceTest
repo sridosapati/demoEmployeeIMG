@@ -1,0 +1,47 @@
+package com.example.employee.service;
+
+import com.example.employee.dto.EmployeeRequestDTO;
+import com.example.employee.dto.EmployeeResponseDTO;
+import com.example.employee.entity.Employee;
+import com.example.employee.repository.EmployeeRepository;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+
+@ExtendWith(MockitoExtension.class)
+public class EmployeeServiceTest {
+
+    @Mock
+    private EmployeeRepository employeeRepository;
+
+    @InjectMocks
+    private EmployeeService employeeService;
+
+    @Test
+    public void testCreateEmployee() {
+        EmployeeRequestDTO request = new EmployeeRequestDTO();
+        request.setEmployeeId("E123");
+        request.setFirstName("John");
+        request.setLastName("Doe");
+        request.setEmail("john.doe@example.com");
+        request.setSalary(50000.0);
+
+        Employee employee = new Employee();
+        employee.setEmployeeId("E123");
+
+        Mockito.when(employeeRepository.save(any(Employee.class))).thenReturn(employee);
+
+        EmployeeResponseDTO response = employeeService.createEmployee(request);
+
+        assertEquals("E123", response.getEmployeeId());
+        assertEquals("John", response.getFirstName());
+    }
+}

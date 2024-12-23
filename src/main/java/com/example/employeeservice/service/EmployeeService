@@ -1,0 +1,63 @@
+@Service
+public class EmployeeService {
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    public void saveEmployee(EmployeeRequestDTO employeeDTO) {
+        Employee employee = new Employee();
+        employee.setEmployeeId(employeeDTO.getEmployeeId());
+        employee.setFirstName(employeeDTO.getFirstName());
+        employee.setLastName(employeeDTO.getLastName());
+        employee.setEmail(employeeDTO.getEmail());
+        employee.setPhoneNumbers(employeeDTO.getPhoneNumbers());
+        employee.setDoj(LocalDate.parse(employeeDTO.getDoj()));
+        employee.setSalary(employeeDTO.getSalary());
+        employeeRepository.save(employee);
+    }
+
+    public EmployeeResponseDTO getTaxDeductions(String employeeId) {
+        Employee employee = employeeRepository.findByEmployeeId(employeeId)
+            .orElseThrow(() -> new ValidationException("Employee not found"));
+
+        TaxDeductionDTO taxDetails = calculateTax(employee);
+        EmployeeResponseDTO response = new EmployeeResponseDTO();
+        response.setEmployeeId(employee.getEmployeeId());
+        response.setFirstName(employee.getFirstName());
+        response.setLastName(employee.getLastName());
+        response.setYearlySalary(taxDetails.getYearlySalary());
+        response.setTaxAmount(taxDetails.getTaxAmount());
+        response.setCessAmount(taxDetails.getCessAmount());
+
+        return response;
+    }
+
+    private TaxDeductionDTO calculateTax(Employee employee) {
+        Double yearlySalary = employee.getSalary() * 12;
+        long monthsWorked = ChronoUnit.MONTHS.between(employee.getDoj(), LocalDate.now()) + 1;
+
+        yearlySalary = (yearlySalary / 12) * monthsWorked;
+        double tax = 0;
+
+        if (yearlySalary > 250000) {
+            if (yearlySalary <= 500000) {
+                tax += (yearlySalary - 250000) * 0.05;
+            } else if (yearlySalary <= 1000000) {
+                tax += 250000 * 0.05;
+                tax += (yearlySalary - 500000) * 0.10;
+            } else {
+                tax += 250000 * 0.05;
+                tax += 500000 * 0.10;
+                tax += (yearlySalary - 1000000) * 0.20;
+            }
+        }
+
+        double cess = yearlySalary > 2500000 ? (yearlySalary - 2500000) * 0.02 : 0;
+
+        TaxDeductionDTO taxDeduction = new TaxDeductionDTO();
+        taxDeduction.setYearlySalary(yearlySalary);
+        taxDeduction.setTaxAmount(tax);
+        taxDeduction.setCessAmount(cess);
+
+        return taxDeduction;
+    }
+}
